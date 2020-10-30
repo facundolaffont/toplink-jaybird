@@ -10,7 +10,10 @@ public class Main {
 	private static final String opCrearFactura = "2";
 	private static final String opMostrarCliente = "3";
 	private static final String opMostrarFactura = "4";
+	private static final String opBajaCliente = "5";
+	private static final String opBajaFactura = "6";
 	private static final String opModifCliente = "7";
+	private static final String opModifFactura = "8";
 
 	private static final String opSalir = "0";
 	
@@ -41,7 +44,10 @@ public class Main {
 			case opCrearFactura: menuCrearFactura(); break;
 			case opMostrarCliente: menuMostrarCliente(); break;
 			case opMostrarFactura: menuMostrarFactura(); break;
+			case opBajaCliente: menuBajaCliente(); break;
+			case opBajaFactura: menuBajaFactura(); break;
 			case opModifCliente: menuModifCliente(); break;
+			case opModifFactura: menuModifFactura(); break;
 			case opError:
 				System.out.println();
 				System.out.println("Opción incorrecta. Vuelva a intentarlo.");
@@ -83,7 +89,10 @@ public class Main {
 		System.out.println(opCrearFactura + ") Crear Factura.");
 		System.out.println(opMostrarCliente + ") Mostrar cliente.");
 		System.out.println(opMostrarFactura + ") Mostrar factura.");
+		System.out.println(opBajaCliente + ") Baja Cliente.");
+		System.out.println(opBajaFactura + ") Baja Factura.");
 		System.out.println(opModifCliente + ") Modificar cliente.");
+		System.out.println(opModifFactura + ") Modificar factura.");
 		System.out.println();
 		System.out.println(opSalir + ") Salir.");
 		System.out.println();
@@ -96,7 +105,10 @@ public class Main {
 		case opCrearFactura:
 		case opMostrarCliente:
 		case opMostrarFactura:
+		case opBajaCliente:
+		case opBajaFactura:
 		case opModifCliente:
+		case opModifFactura:
 		break;
 		default: input = "err";
 		}
@@ -148,12 +160,9 @@ public class Main {
 						else {
 							
 							// Si el ID ya existe, error.
-							em.getTransaction().begin();
-							em.flush();
 							query = em.createNamedQuery("cliente.porID");
 							query.setParameter("id", codigoCliente);
 							clientes = query.getResultList();
-							em.getTransaction().commit();
 							if(!clientes.isEmpty()) {
 								System.out.println();
 								System.out.println("Ya existe el ID de cliente.");
@@ -187,6 +196,8 @@ public class Main {
 											em.getTransaction().begin();
 											em.persist(clienteActual);
 											em.getTransaction().commit();
+											System.out.println();
+											System.out.println("Cliente creado.");
 											
 											while (repetir) {
 												System.out.println();
@@ -348,6 +359,8 @@ public class Main {
 																		em.getTransaction().begin();
 																		em.persist(facturaGuardar);
 																		em.getTransaction().commit();
+																		System.out.println();
+																		System.out.println("Factura creada.");
 																	
 																		while (repetir) {
 																			System.out.println();
@@ -404,7 +417,6 @@ public class Main {
 		}
 	}
 
-	
 	// Funcionamiento: le pregunta al usuario si quiere enlistar
 	// todos los clientes o si quiere mostrar un cliente en base
 	// a su ID.
@@ -416,8 +428,11 @@ public class Main {
 		Query query;
 		List<Cliente> clientes;
 		
-		limpiarPantalla();
 		while(repetir) {
+			limpiarPantalla();
+			System.out.println("Mostrar clientes");
+			System.out.println("----------------");
+			
 			System.out.println();
 			System.out.print("Ingrese el ID del cliente a mostrar o presione Enter para mostrar todos: ");
 			input = consola.nextLine();
@@ -488,8 +503,12 @@ public class Main {
 		Query query;
 		List<Factura> facturas;
 		
-		limpiarPantalla();
+		
 		while(repetir) {
+			limpiarPantalla();
+			System.out.println("Mostrar facturas");
+			System.out.println("----------------");
+			
 			System.out.println();
 			System.out.print("Ingrese el número de la factura a mostrar o presione Enter para mostrar todas: ");
 			input = consola.nextLine();
@@ -557,6 +576,222 @@ public class Main {
 	}
 
 	@SuppressWarnings("unchecked")
+	static public void menuBajaCliente() {
+		String input;
+		int codigoCliente;
+		boolean volver = false;
+		boolean repetir; 
+		Query query;
+		List<Cliente> clientes;
+		List<Factura> facturas;
+		
+		while (!volver) {
+			limpiarPantalla();
+			System.out.println("Eliminación de clientes");
+			System.out.println("-----------------------");
+			
+			repetir = true;
+			while(repetir) {
+				
+				// El usuario ingresa el ID o sale.
+				System.out.println();
+				System.out.print("Ingrese el ID ó 0 para cancelar: ");
+				input = consola.nextLine();
+				if (input.equals("0")) {
+					repetir = false;
+					volver = true;
+					
+				} else { 
+					try {
+						
+						// Si el ID no es válido, error.
+						codigoCliente = Integer.parseInt(input);
+						if (codigoCliente < 0) {
+							System.out.println();
+							System.out.println("El ID debe ser mayor a cero.");
+							enterParaContinuar();
+						}
+
+						else {
+							
+							// Si el ID no existe, error.
+							query = em.createNamedQuery("cliente.porID");
+							query.setParameter("id", codigoCliente);
+							clientes = query.getResultList();
+							if(clientes.isEmpty()) {
+								System.out.println();
+								System.out.println("No existe el ID de cliente.");
+								enterParaContinuar();
+
+							} else {
+								
+								// Si existen facturas con ese ID de cliente, primero se
+								// deben borrar las facturas.
+								query = em.createNamedQuery("factura.porIdCliente");
+								query.setParameter("id", codigoCliente);
+								facturas = query.getResultList();
+								if(!facturas.isEmpty()) {
+									System.out.println();
+									System.out.println("Primero debe eliminar las facturas asociadas con el cliente:");
+									for(int i = 0; i < facturas.size(); i++) {
+										System.out.println();
+										System.out.println(facturas.get(i).toString());
+									}
+									enterParaContinuar();
+								} else {
+								
+									repetir = true;
+									while(repetir) {
+	
+										// Eliminamos al cliente.
+										// Como la Lista no dio vacia existe el cliente
+										try {
+											em.getTransaction().begin();
+											em.remove(clientes.get(0));
+											em.getTransaction().commit();
+											System.out.println();
+											System.out.println("Cliente eliminado.");
+											
+											while (repetir) {
+												System.out.println();
+												System.out.print("¿Desea dar de Baja otro cliente? [S/N]: ");
+												input = consola.nextLine();
+												switch(input) {
+												case "n", "N":
+													repetir = false;
+													volver = true;
+												break;
+												case "s", "S":
+													repetir = false;
+												break;
+												default:
+													System.out.println();
+													System.out.println("Ingresó una opción incorrecta. Vuelva a intentarlo.");
+													enterParaContinuar();
+												}
+											}
+										} catch(Exception e) {
+											System.out.println();
+											System.out.println("Info: error.");
+											e.printStackTrace();
+											repetir = false;
+											volver = true;
+											enterParaContinuar();
+										}
+									}
+								}
+							}
+						}
+					} catch (NumberFormatException e) {
+						System.out.println();
+						System.out.println("El ID debe ser numérico.");
+						enterParaContinuar();
+					}
+				}
+			}
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	static public void menuBajaFactura() {
+		String input;
+		int codigoFactura;
+		boolean volver = false;
+		boolean repetir; 
+		Query query;
+		List<Factura> facturas;
+		
+		while (!volver) {
+			limpiarPantalla();
+			System.out.println("Eliminacion de factura");
+			System.out.println("----------------------");
+			
+			repetir = true;
+			while(repetir) {
+				
+				// El usuario ingresa el número de factura o sale.
+				System.out.println();
+				System.out.print("Ingrese el número de factura ó 0 para cancelar: ");
+				input = consola.nextLine();
+				if (input.equals("0")) {
+					repetir = false;
+					volver = true;
+					
+				} else { 
+					try {
+						
+						// Si el número de factura no es válido, error.
+						codigoFactura = Integer.parseInt(input);
+						if (codigoFactura < 0) {
+							System.out.println();
+							System.out.println("El número de factura debe ser mayor a cero.");
+							enterParaContinuar();
+						}
+
+						else {
+							
+							// Si el número de factura no existe, error.
+							query = em.createNamedQuery("factura.porNro");
+							query.setParameter("nro", codigoFactura);
+							facturas = query.getResultList();
+							
+							if(facturas.isEmpty()) {
+								System.out.println();
+								System.out.println("No existe el número de factura.");
+								enterParaContinuar();
+
+							} else {
+								repetir = true;
+								while(repetir) {
+									// Eliminamos a la factura.
+									// Como la lista no está vacía, existe la factura.
+									try {
+										em.getTransaction().begin();
+										em.remove(facturas.get(0));
+										em.getTransaction().commit();
+										System.out.println();
+										System.out.println("Factura eliminada.");
+										
+										while (repetir) {
+											System.out.println();
+											System.out.print("¿Desea dar de baja otra factura? [S/N]: ");
+											input = consola.nextLine();
+											switch(input) {
+											case "n", "N":
+												repetir = false;
+												volver = true;
+											break;
+											case "s", "S":
+												repetir = false;
+											break;
+											default:
+												System.out.println();
+												System.out.println("Ingresó una opción incorrecta. Vuelva a intentarlo.");
+												enterParaContinuar();
+											}
+										}
+									} catch(Exception e) {
+										System.out.println();
+										System.out.println("Info: error.");
+										e.printStackTrace();
+										repetir = false;
+										volver = true;
+										enterParaContinuar();
+									}
+								}
+							}
+						}
+					} catch (NumberFormatException e) {
+						System.out.println();
+						System.out.println("El valor debe ser numérico.");
+						enterParaContinuar();
+					}
+				}
+			}
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
 	static public void menuModifCliente() {
 		String input;
 		boolean repetir = true;
@@ -568,6 +803,8 @@ public class Main {
 		
 		while (repetir) {
 			limpiarPantalla();
+			System.out.println("Modificación de clientes");
+			System.out.println("------------------------");
 			
 			System.out.print("Ingrese el ID de cliente a modificar, o 0 para volver: ");
 			input = consola.nextLine();
@@ -647,7 +884,156 @@ public class Main {
 			}
 		}
 	}
+
+	@SuppressWarnings("unchecked")
+	static public void menuModifFactura() {
+		String input;
+		boolean repetir = true;
+		int numeroFactura;
+		Query query;
+		List<Factura> facturas;
+		List<Cliente> clientes;
+		int nuevoID;
+		float nuevoImporte;
+		Factura facturaModif;
+		
+		while (repetir) {
+			limpiarPantalla();
+			System.out.println("Modificación de factura");
+			System.out.println("-----------------------");
+			
+			System.out.print("Ingrese el número de factura a modificar, o 0 para volver: ");
+			input = consola.nextLine();
+			
+			if(!esEntero(input))
+				notificar("El valor ingresado no es un entero.");
+			else {
+				numeroFactura = Integer.parseInt(input);
+				if(numeroFactura < 0)
+					notificar("El valor ingresado no puede ser menor a cero.");
+				else if(numeroFactura == 0)
+					repetir = false;
+				else {
+					query = em.createNamedQuery("factura.porNro");
+					query.setParameter("nro", numeroFactura);
+					facturas = query.getResultList();
+					if(facturas.isEmpty())
+						notificar("No existe la factura con número " + numeroFactura);
+					else {
+
+						nuevoID = -1;
+						while(repetir) {
+							System.out.println();
+							System.out.println("ID de cliente actual: " + facturas.get(0).getIdCliente());
 	
+							System.out.println();
+							System.out.print("Tipee el nuevo valor, o presione Enter para no modificar: ");
+							input = consola.nextLine();
+	
+							if(input.isEmpty()) {
+								nuevoID = -1;
+								repetir = false;
+							} else
+								if(!esEntero(input))
+									notificar("El valor ingresado no es un entero.");
+								else {
+									nuevoID = Integer.parseInt(input);
+									
+									if(nuevoID <= 0)
+										notificar("El ID debe ser mayor a cero.");
+									else {
+										// Si el ID no existe, error.
+										query = em.createNamedQuery("cliente.porID");
+										query.setParameter("id", nuevoID);
+										clientes = query.getResultList();
+										if(clientes.isEmpty()) {
+											notificar("No existe el ID de cliente.");
+										} else repetir = false;
+									}
+								}
+						}
+						
+						nuevoImporte = -1;
+						repetir = true;
+						while(repetir) {
+							System.out.println();
+							System.out.println("Importe actual de factura: " + facturas.get(0).getImporte());
+	
+							System.out.println();
+							System.out.print("Tipee el nuevo valor, o presione Enter para no modificar: ");
+							input = consola.nextLine();
+	
+							if(input.isEmpty()) {
+								nuevoImporte = -1;
+								repetir = false;
+							} else
+								if(!esDecimal(input))
+									notificar("El valor ingresado no es un decimal.");
+								else {
+									nuevoImporte = Float.parseFloat(input);
+									
+									if(nuevoImporte < 0)
+										notificar("El importe debe ser mayor o igual a cero.");
+									else repetir = false;
+								}
+						}
+						
+						if (nuevoID == -1 && nuevoImporte == -1) notificar("No hubo modificaciones.");
+						else {
+							
+							facturaModif = new Factura();
+							facturaModif.setNro(facturas.get(0).getNro());
+							facturaModif.setIdCliente(nuevoID == -1 ? facturas.get(0).getIdCliente() : nuevoID);
+							facturaModif.setImporte(nuevoImporte == -1 ? facturas.get(0).getImporte() : nuevoImporte);
+							
+							System.out.println();
+							System.out.println("-- Datos originales --");
+							System.out.println(facturas.get(0).toString());
+	
+							System.out.println();
+							System.out.println("-- Datos modificados --");
+							System.out.println(facturaModif.toString());
+	
+							repetir = true;
+							while (repetir) {
+								System.out.println();
+								System.out.print("¿Desea confirmar los cambios? [S/N]: ");
+								input = consola.nextLine();
+								switch(input) {
+								case "s", "S":
+								case "n", "N":
+									repetir = false;
+								break;
+								default:
+									notificar("Ingresó una opción incorrecta. Vuelva a intentarlo.");
+								}
+							}
+							
+							switch(input) {
+							case "s", "S":
+								try {
+									em.getTransaction().begin();
+									if(nuevoID != -1) facturas.get(0).setIdCliente(nuevoID);
+									if(nuevoImporte != -1) facturas.get(0).setImporte(nuevoImporte);
+									em.getTransaction().commit();
+									notificar("Se realizaron las modificaciones.");
+								} catch (Exception e) {
+									e.printStackTrace();
+									enterParaContinuar();
+								}
+							break;
+							case "n", "N":
+								notificar("Se canceló la modificación.");
+							break;
+							}
+						}
+						repetir = true;
+					}
+				}
+			}
+		}
+	}
+
 	static public boolean esEntero(String input) {
 		try {
 			Integer.parseInt(input);
@@ -657,6 +1043,15 @@ public class Main {
 		}
 	}
 	
+	static public boolean esDecimal(String input) {
+		try {
+			Float.parseFloat(input);
+			return true;
+		} catch (NumberFormatException e) {
+			return false;
+		}
+	}
+
 	static public void notificar(String mensaje) {
 		System.out.println();
 		System.out.println(mensaje);
