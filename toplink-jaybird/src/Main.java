@@ -2,7 +2,6 @@ import java.util.List;
 import java.util.Scanner;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityNotFoundException;
 import javax.persistence.Persistence;
 import javax.persistence.Query;
 
@@ -11,6 +10,7 @@ public class Main {
 	private static final String opCrearFactura = "2";
 	private static final String opMostrarCliente = "3";
 	private static final String opMostrarFactura = "4";
+	private static final String opModifCliente = "7";
 
 	private static final String opSalir = "0";
 	
@@ -41,6 +41,7 @@ public class Main {
 			case opCrearFactura: menuCrearFactura(); break;
 			case opMostrarCliente: menuMostrarCliente(); break;
 			case opMostrarFactura: menuMostrarFactura(); break;
+			case opModifCliente: menuModifCliente(); break;
 			case opError:
 				System.out.println();
 				System.out.println("Opción incorrecta. Vuelva a intentarlo.");
@@ -82,6 +83,7 @@ public class Main {
 		System.out.println(opCrearFactura + ") Crear Factura.");
 		System.out.println(opMostrarCliente + ") Mostrar cliente.");
 		System.out.println(opMostrarFactura + ") Mostrar factura.");
+		System.out.println(opModifCliente + ") Modificar cliente.");
 		System.out.println();
 		System.out.println(opSalir + ") Salir.");
 		System.out.println();
@@ -94,6 +96,7 @@ public class Main {
 		case opCrearFactura:
 		case opMostrarCliente:
 		case opMostrarFactura:
+		case opModifCliente:
 		break;
 		default: input = "err";
 		}
@@ -111,7 +114,7 @@ public class Main {
 		String input;
 		int codigoCliente;
 		boolean volver = false;
-		boolean repetir, noExiste;
+		boolean repetir;
 		Query query;
 		List<Cliente> clientes;
 		
@@ -552,4 +555,112 @@ public class Main {
 		for(int i = 0; i < 100; i++)
 			System.out.println();
 	}
+
+	@SuppressWarnings("unchecked")
+	static public void menuModifCliente() {
+		String input;
+		boolean repetir = true;
+		int codigoCliente;
+		Query query;
+		List<Cliente> clientes;
+		String nuevaDescripcion;
+		Cliente clienteModif;
+		
+		while (repetir) {
+			limpiarPantalla();
+			
+			System.out.print("Ingrese el ID de cliente a modificar, o 0 para volver: ");
+			input = consola.nextLine();
+			
+			if(!esEntero(input))
+				notificar("El valor ingresado no es un entero.");
+			else {
+				codigoCliente = Integer.parseInt(input);
+				if(codigoCliente < 0)
+					notificar("El valor ingresado no puede ser menor a cero.");
+				else if(codigoCliente == 0)
+					repetir = false;
+				else {
+					query = em.createNamedQuery("cliente.porID");
+					query.setParameter("id", codigoCliente);
+					clientes = query.getResultList();
+					if(clientes.isEmpty())
+						notificar("No existe el cliente con ID " + codigoCliente);
+					else {
+						nuevaDescripcion = "";
+
+						System.out.println();
+						System.out.println("Descripción actual: " + clientes.get(0).getDescr());
+
+						System.out.println();
+						System.out.print("Tipee el nuevo valor, o presione Enter para no modificar: ");
+						input = consola.nextLine();
+
+						if(!input.isEmpty()) {
+							nuevaDescripcion = input;
+						}
+						if (nuevaDescripcion.isEmpty())
+							notificar("No hubo modificaciones.");
+						else {
+							clienteModif = new Cliente();
+							clienteModif.setID(clientes.get(0).getID());
+							clienteModif.setDescr(nuevaDescripcion);
+							
+							System.out.println();
+							System.out.println("-- Datos originales --");
+							System.out.println(clientes.get(0).toString());
+
+							System.out.println();
+							System.out.println("-- Datos modificados --");
+							System.out.println(clienteModif.toString());
+
+							while (repetir) {
+								System.out.println();
+								System.out.print("¿Desea confirmar los cambios? [S/N]: ");
+								input = consola.nextLine();
+								switch(input) {
+								case "s", "S":
+								case "n", "N":
+									repetir = false;
+								break;
+								default:
+									notificar("Ingresó una opción incorrecta. Vuelva a intentarlo.");
+								}
+							}
+							
+							switch(input) {
+							case "s", "S":
+								em.getTransaction().begin();
+								clientes.get(0).setDescr(nuevaDescripcion);
+								em.getTransaction().commit();
+								notificar("Se realizaron las modificaciones.");
+							break;
+							case "n", "N":
+								notificar("Se canceló la modificación.");
+							break;
+							}
+							
+							repetir = true;
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	static public boolean esEntero(String input) {
+		try {
+			Integer.parseInt(input);
+			return true;
+		} catch (NumberFormatException e) {
+			return false;
+		}
+	}
+	
+	static public void notificar(String mensaje) {
+		System.out.println();
+		System.out.println(mensaje);
+		enterParaContinuar();
+	}
+	
 }
