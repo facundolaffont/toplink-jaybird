@@ -9,7 +9,8 @@ import javax.persistence.NamedQueries;
 @Table
 @NamedQueries({
 	@NamedQuery(name="factura.todas", query="SELECT f FROM Factura f"),
-	@NamedQuery(name="factura.porNro", query="SELECT f FROM Factura f WHERE f.nro = :nro")
+	@NamedQuery(name="factura.porNro", query="SELECT f FROM Factura f WHERE f.nro = :nro"),
+	@NamedQuery(name="factura.porIdCliente", query="SELECT f FROM Factura f WHERE f.idCliente = :id")
 })
 public class Factura {
 	
